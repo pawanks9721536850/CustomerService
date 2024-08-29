@@ -5,17 +5,28 @@ import com.TraineProject.CustomerService.dto.CustomerDto;
 import com.TraineProject.CustomerService.dto.CustomerLoginDto;
 import com.TraineProject.CustomerService.dto.CustomerResponseDto;
 import com.TraineProject.CustomerService.entity.CustomerEntity;
+import com.TraineProject.CustomerService.exceptionHandler.InvalidUserException;
 import com.TraineProject.CustomerService.service.CustomerService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
 import java.util.Optional;
 
 @Service
 public class CustomerServiceImpl implements CustomerService {
 
-    private CustomerRegistrationDao customerRegistrationDao ;
+    private final CustomerRegistrationDao customerRegistrationDao ;
 
+
+    private TokenService tokenService;
+
+//    @Autowired
+//    public CustomerServiceImpl( TokenService tokenService )
+//    {
+//        this.tokenService= tokenService;
+//    }
 
     @Autowired
     public CustomerServiceImpl (CustomerRegistrationDao customerRegistrationDao)
@@ -52,8 +63,35 @@ public class CustomerServiceImpl implements CustomerService {
     }
 
     @Override
-    public CustomerResponseDto customerLogin(CustomerLoginDto customerLoginDto )
+    public CustomerResponseDto customerLogin(CustomerLoginDto customerLoginDto ) throws InvalidUserException
     {
-        Optional<CustomerEntity> optionalCustomer = customerRegistrationDao.findByEmail(customerLoginDto.getEmail());
+        Optional<CustomerEntity> Customer = customerRegistrationDao.findByEmail(customerLoginDto.getEmail());
+        CustomerEntity customerEntity;
+        if ( Customer.isPresent() )
+        {
+             customerEntity = Customer.get() ;
+        }
+        else {
+            throw new InvalidUserException ( "Invalid email or password ");
+        }
+
+        if ( !customerEntity.getPassword().equals (customerLoginDto.getPassword() ))
+        {
+            throw new InvalidUserException("password does not match");
+        }
+
+        if ( customerEntity.getToken() == null ||  LocalDateTime.now().isAfter(customerEntity.getTokenExpiration() ))
+        {
+            System.out.println("time:  "+LocalDateTime.now());
+            String token = tokenService.generateToken();
+            LocalDateTime tokenExpiration = LocalDateTime.now().plusHours(1);
+            customerEntity.setToken(token);
+            customerEntity.setTokenExpiration(tokenExpiration);
+            customerRegistrationDao.customerLogin(customerLoginDto);
+          //  customerRegistrationDao.registerCustomer(customer);
+        }
+
+        return changeCustomerEntityToCustomerResponseDto(customerEntity);
+
     }
 }

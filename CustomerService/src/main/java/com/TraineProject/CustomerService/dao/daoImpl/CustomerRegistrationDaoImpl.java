@@ -8,6 +8,8 @@ import com.TraineProject.CustomerService.repo.CustomerRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Repository;
 
+import java.util.Optional;
+
 @Repository
 public abstract class CustomerRegistrationDaoImpl implements CustomerRegistrationDao {
 
@@ -26,8 +28,26 @@ public abstract class CustomerRegistrationDaoImpl implements CustomerRegistratio
     }
 
     @Override
-    CustomerResponseDto customerLogin (CustomerLoginDto customerLoginDto )
+    public CustomerEntity customerLogin (CustomerLoginDto customerLoginDto )
     {
+        Optional<CustomerEntity> customer = customerRepository.findByEmail(customerLoginDto.getEmail());
 
+        if ( customer.isPresent() )
+        {
+            CustomerEntity presentCustomer = customer.get() ;
+            if ( presentCustomer.getPassword().equals ( customerLoginDto.getPassword() ))
+            {
+                return presentCustomer ;
+            }
+            else
+            {
+                throw new RuntimeException("password does not match");
+            }
+
+        }
+        else
+        {
+            throw new RuntimeException("Customer does not exists, register first" );
+        }
     }
 }
