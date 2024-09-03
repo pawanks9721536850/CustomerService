@@ -44,7 +44,10 @@ public class CustomerEntity {
     private String password ;
 
 //    @OneToOne(mappedBy = "customer" , cascade = CascadeType.ALL, orphanRemoval = true)
-//    private AddressEntity address;
+//    private AddressEntity addressEntity;
+
+//    @OneToOne(mappedBy ="customer" )
+//    private ProductEntity productEntity;
 
     private String token;
 
